@@ -2,14 +2,14 @@ import z3
 import numpy as np
 from itertools import combinations
 
-name = "3_9_11"
+name = "2_2_2"
 
-u_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/algorithms/{name}/{name}_u_arr.csv", dtype="float", delimiter=",")
-v_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/algorithms/{name}/{name}_v_arr.csv", dtype="float", delimiter=",")
-w_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/algorithms/{name}/{name}_w_arr.csv", dtype="float", delimiter=",")
+u_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{name}/{name}_u_arr.csv", dtype="float", delimiter=",")
+v_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{name}/{name}_v_arr.csv", dtype="float", delimiter=",")
+w_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{name}/{name}_w_arr.csv", dtype="float", delimiter=",")
 
-array_chosen = v_arr
-array_name = "v"
+array_chosen = w_arr
+array_name = "w"
 
 print(array_chosen)
 
@@ -179,7 +179,7 @@ original_arith = count_arithmetic(np_array_chosen)
 print(f"original: {original_arith}")
 print(f"resulting: {n_arith}")
 phi_inv = np.linalg.inv(final).astype(int)
-np.savetxt(f"{name}_{array_name}_arr_phi_inv.csv", phi_inv, fmt = "%d", delimiter = ",")
-np.savetxt(f"new_{name}_{array_name}_arr.csv", n, fmt = "%d", delimiter = ",")
+# np.savetxt(f"{name}_{array_name}_arr_phi_inv.csv", phi_inv, fmt = "%d", delimiter = ",")
+# np.savetxt(f"new_{name}_{array_name}_arr.csv", n, fmt = "%d", delimiter = ",")
 
 print((array_chosen == np.matmul(n, phi_inv)).all())
