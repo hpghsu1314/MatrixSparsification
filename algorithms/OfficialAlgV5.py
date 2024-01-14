@@ -1,14 +1,37 @@
 import z3
 import numpy as np
 
-name = "3_9_11"
+name = "444"
 
-u_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{name}/{name}_u_arr.csv", dtype="float", delimiter=",")
-v_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{name}/{name}_v_arr.csv", dtype="float", delimiter=",")
-w_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{name}/{name}_w_arr.csv", dtype="float", delimiter=",")
+algorithmFolder = "FlipGraphAlgorithms"
 
-array_chosen = u_arr
-array_name = "u"
+print(name)
+
+#For DeepMind Algorithms
+if algorithmFolder == "DeepMindAlgorithms":
+    u_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{algorithmFolder}/{name}/{name}_u_arr.csv", dtype="float", delimiter=",")
+    v_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{algorithmFolder}/{name}/{name}_v_arr.csv", dtype="float", delimiter=",")
+    w_arr = np.loadtxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{algorithmFolder}/{name}/{name}_w_arr.csv", dtype="float", delimiter=",")
+
+#For FlipGraph Algorithms
+elif algorithmFolder == "FlipGraphAlgorithms":
+    alg = open(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{algorithmFolder}/{name}/flips_mod0_{name}.alg")
+    design_matrices = []
+    temp = []
+    for l in alg:
+        line = l.rstrip().split(" ")
+        if line[0] == "#":
+            design_matrices.append(temp.copy())
+            temp = []
+        else:
+            temp.append([float(x) for x in line])
+    design_matrices.append(temp.copy())
+    u_arr = np.array(design_matrices[1]).T
+    v_arr = np.array(design_matrices[2]).T
+    w_arr = np.array(design_matrices[3]).T
+    
+array_chosen = v_arr
+array_name = "v"
 
 print(array_chosen)
 
@@ -76,33 +99,35 @@ def z3_to_float(v):
 
 
 def find_vectors():
-    solutions = []
-    for arith in range(1, 2 * array_chosen.shape[0]):
+    rank = array_chosen.shape[1]
+    solutions = np.zeros((rank, rank))
+    for arith in range(2 * array_chosen.shape[0]):
         print(arith) #delete this line if you don't want to see the arithmetic count
         s = function(array_chosen, array_name, arith)
         s.run()
-        while np.linalg.matrix_rank(np.array(solutions)) < array_chosen.shape[1] and s.solver.check() == z3.sat:
-            m = s.solver.model()
-            nicer = [(d, m[d]) for d in m if "sol" in d.name()]
-            nicer = sorted(nicer, key=lambda x: int(x[0].name()[5:]))
-            delete_vector = [solution[1] for solution in nicer]
-            s.del_vect(delete_vector)
-            print(delete_vector) #delete this line if you don't want to see the vectors
-            solutions.append([z3_to_float(v) for v in delete_vector])
-        if np.linalg.matrix_rank(np.array(solutions)) == array_chosen.shape[1]:
+        for i in range(rank):
+            while np.linalg.matrix_rank(solutions) < i+1 and s.solver.check() == z3.sat:
+                m = s.solver.model()
+                nicer = [(d, m[d]) for d in m if "sol" in d.name()]
+                nicer = sorted(nicer, key=lambda x: int(x[0].name()[5:]))
+                delete_vector = [solution[1] for solution in nicer]
+                s.del_vect(delete_vector)
+                print(delete_vector) #delete this line if you don't want to see the vectors
+                solutions[i,:] = np.array([z3_to_float(v) for v in delete_vector])
+        if np.linalg.matrix_rank(solutions) == rank:
             return solutions
 
-
 def gau_elim(vectors):
-    matrix = np.array([v for v in vectors])
+    matrix = np.array([v for v in vectors], dtype=float)  # Ensure dtype is float for division
     for row in range(matrix.shape[0]):
-        pivot = 0
-        while pivot != matrix.shape[1] and matrix[row][pivot] == 0:
-            pivot += 1
-        if pivot != matrix.shape[1]:
-            for vect in range(len(matrix[row+1:])):
-                scale = matrix[row + vect + 1][pivot] / matrix[row][pivot]
-                matrix[row + vect + 1] = matrix[row + vect + 1] - scale * matrix[row]
+        if any(matrix[row]):
+            pivot = 0
+            while pivot < matrix.shape[1] and matrix[row][pivot] == 0:
+                pivot += 1
+            if pivot < matrix.shape[1]:  # Ensure pivot is within bounds
+                for vect in range(row + 1, matrix.shape[0]):
+                    scale = matrix[vect][pivot] / matrix[row][pivot]
+                    matrix[vect] = matrix[vect] - scale * matrix[row]
     return matrix
 
 
@@ -115,20 +140,19 @@ def count_arithmetic(matrix):
                 arithmetic += 2 - (matrix[row, col] in pm)
     return arithmetic
 
-
 pos_sol = find_vectors()
 ref = gau_elim(pos_sol)
 lin_ind_matrix = [pos_sol[row] for row in range(len(ref)) if any(ref[row])]
 
 final = np.array(lin_ind_matrix).T
-n = np.matmul(array_chosen, final)
+n = np.matmul(array_chosen, final).astype(np.float16)
 n_arith = count_arithmetic(n)
 original_arith = count_arithmetic(array_chosen)
 print(f"original: {original_arith}")
 print(f"resulting: {n_arith}")
-phi_inv = np.linalg.inv(final).astype(float)
+phi_inv = np.linalg.inv(final).astype(np.float16)
 
-np.savetxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{name}/Optimal/{name}_{array_name}_arr_phi_inv.csv", phi_inv, fmt = "%d", delimiter = ",")
-np.savetxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{name}/Optimal/new_{name}_{array_name}_arr.csv", n, fmt = "%d", delimiter = ",")
+np.savetxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{algorithmFolder}/{name}/Optimal/{name}_{array_name}_arr_phi_inv.csv", phi_inv, fmt = "%d", delimiter = ",")
+np.savetxt(f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{algorithmFolder}/{name}/Optimal/new_{name}_{array_name}_arr.csv", n, fmt = "%d", delimiter = ",")
 
 print((array_chosen == np.matmul(n, phi_inv)).all())

@@ -1,6 +1,6 @@
 from numpy import genfromtxt
 
-n, m, k = 4, 5, 5
+n, m, k = 3, 5, 9
 
 file = open(f"AlgorithmComplexity.txt", "a+")
 
@@ -27,6 +27,7 @@ def countLinOp(matrix):
                 count += 1
             elif entry != 0:
                 count += 2
+            
     return count
 
 print("Original")
@@ -36,20 +37,15 @@ print(countLinOp(original_u) + countLinOp(original_v) + countLinOp(original_w))
 
 def algComplexity():
     
-    uConst, vConst, wConst = countLinOp(new_u_arr), countLinOp(new_v_arr), countLinOp(new_w_arr)
+    uConst, vConst, wConst = countLinOp(original_u), countLinOp(original_v), countLinOp(original_w)
     subConst = (uConst / (t - (n * m))) + (vConst / (t - (m * k))) + (wConst / (t - (n * k)))
     leadingConst = (1 + subConst)
     
     print("Outcome")
     print(uConst + vConst + wConst)
-    file.write(f"Outcome: {uConst + vConst + wConst}\n")
+    #file.write(f"Outcome: {uConst + vConst + wConst}\n")
     
-    uPhiConst, vPhiConst, wPhiConst = countLinOp(u_phi_inv), countLinOp(v_phi_inv), countLinOp(w_phi_inv)
-    uPhiTimeComp = uPhiConst / (n * m)
-    vPhiTimeComp = vPhiConst / (m * k)
-    wPhiTimeComp = wPhiConst / (k * k)
-    
-    return f"{leadingConst}(n^log_{n * m * k}({t}^3)) - {subConst}(n^2) + {uPhiTimeComp}*(nm)log_{n*m}(nm) + {vPhiTimeComp}*(mk)log_{m*k}(mk) + {wPhiTimeComp}*(kk)log_{k*k}(kk)"
+    return f"{leadingConst}(n^log_{n * m * k}({t}^3)) - {subConst}(n^2)"
 
 comp = algComplexity()
 print(comp)
