@@ -70,3 +70,9 @@ Outcome: 332
 Original: 549
 Outcome: 437
 4_5_5: 9.055672268907562(n^log_100(76^3)) - 8.055672268907562(n^2) + 0.45*(nm)log_20(nm) + 1.0*(mk)log_25(mk) + 0.88*(kk)log_25(kk)
+Outcome: 12
+Outcome: 222
+Outcome: 222
+Outcome: 222
+Outcome: 332
+Outcome: 437
