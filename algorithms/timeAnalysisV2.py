@@ -1,11 +1,12 @@
 from numpy import genfromtxt
 import numpy as np
-n, m, k = 3, 3, 3
+l, m, n = 4, 5, 6
 
-file = open(f"DeepMindAlgorithmsUVW.csv", "a+")
 
-nmk_size = f"{n}_{m}_{k}"
-alg_type = "DeepMindAlgorithms"
+nmk_size = f"{l}{m}{n}"
+alg_type = "FlipGraphAlgorithms"
+
+file = open(f"{alg_type}_complexity.csv", "a+")
 
 path = f"C:/Users/hpghs/Desktop/Research/MatrixSparsification/algorithms/{alg_type}"
 
@@ -17,8 +18,8 @@ elif alg_type == "FlipGraphAlgorithms":
     alg = open(f"{path}/{nmk_size}/flips_mod0_{nmk_size}.alg")
     design_matrices = []
     temp = []
-    for l in alg:
-        line = l.rstrip().split(" ")
+    for li in alg:
+        line = li.rstrip().split(" ")
         if line[0] == "#":
             design_matrices.append(temp.copy())
             temp = []
@@ -35,11 +36,6 @@ new_w_arr = genfromtxt(f"{path}/{nmk_size}/Optimal/new_{nmk_size}_w_arr.csv", de
 t = len(new_u_arr)
 
 
-
-u_phi_inv = genfromtxt(f"{path}/{nmk_size}/Optimal/{nmk_size}_u_arr_phi_inv.csv", delimiter=",")
-v_phi_inv = genfromtxt(f"{path}/{nmk_size}/Optimal/{nmk_size}_v_arr_phi_inv.csv", delimiter=",")
-w_phi_inv = genfromtxt(f"{path}/{nmk_size}/Optimal/{nmk_size}_w_arr_phi_inv.csv", delimiter=",").transpose()
-
 def countLinOp(matrix):
     count = -1 * len(matrix)
     for row in matrix:
@@ -50,33 +46,46 @@ def countLinOp(matrix):
                 count += 2
     return count
 
-#file.write(f"{nmk_size}, {countLinOp(new_u_arr)}, {countLinOp(new_v_arr)}, {countLinOp(new_w_arr)}\n")
+uConst, vConst, wConst = countLinOp(new_u_arr), countLinOp(new_v_arr), countLinOp(new_w_arr)
 
 
 print("Original")
 print(countLinOp(original_u) + countLinOp(original_v) + countLinOp(original_w))
-print(1 + (countLinOp(original_u)/ (t - (n * m))) + (countLinOp(original_v)/ (t - (m * k))) + (countLinOp(original_w)/ (t - (n * k))))
+original_const = 1 + (countLinOp(original_u)/ (t - (l * m))) + (countLinOp(original_v)/ (t - (m * n))) + (countLinOp(original_w)/ (t - (l * n)))
+print(1 + (countLinOp(original_u)/ (t - (l * m))) + (countLinOp(original_v)/ (t - (m * n))) + (countLinOp(original_w)/ (t - (l * n))))
 
 #file.write(f"Original: {countLinOp(original_u) + countLinOp(original_v) + countLinOp(original_w)}\n")
 
 def algComplexity():
-    
-    uConst, vConst, wConst = countLinOp(new_u_arr), countLinOp(new_v_arr), countLinOp(new_w_arr)
-    subConst = (uConst / (t - (n * m))) + (vConst / (t - (m * k))) + (wConst / (t - (n * k)))
+    subConst = (uConst / (t - (l * m))) + (vConst / (t - (m * n))) + (wConst / (t - (l * n)))
     leadingConst = (1 + subConst)
     
     print("Outcome")
     print(uConst + vConst + wConst)
-    #file.write(f"Outcome: {uConst + vConst + wConst}\n")
-    
-    uPhiConst, vPhiConst, wPhiConst = countLinOp(u_phi_inv), countLinOp(v_phi_inv), countLinOp(w_phi_inv)
-    uPhiTimeComp = uPhiConst / (n * m)
-    vPhiTimeComp = vPhiConst / (m * k)
-    wPhiTimeComp = wPhiConst / (k * k)
-    
-    return f"{leadingConst}(n^log_{n * m * k}({t}^3)) - {subConst}(n^2) + {uPhiTimeComp}*(nm)log_{n*m}(nm) + {vPhiTimeComp}*(mk)log_{m*k}(mk) + {wPhiTimeComp}*(kk)log_{k*k}(kk)"
 
-comp = algComplexity()
-print(comp)
+    return f"{leadingConst}"
 
-#file.write(f"{n}_{m}_{k}: {comp}\n")
+
+def algComplexityThm6():
+    subU = (l*m*n*n + n*l*t + t*t) * uConst
+    subV = (l*l*m*n + m*l*t + t*t) * vConst
+    subW = (l*m*m*n + m*n*t + t*t) * wConst
+    subT = (l*m*n*n - l*m*m*n - m*n*t + n*l*t) * t
+    leadingConst = 1 + ((subU + subV + subW + subT) / (t*t*t - l*l*m*m*n*n))
+    return f"{leadingConst}"
+
+def algComplexityCorollary7():
+    subU = (l*m*n*n + m*n*t + t*t) * uConst
+    subV = (l*l*m*n + n*l*t + t*t) * vConst
+    subW = (l*m*m*n + m*l*t + t*t) * wConst
+    subT = (l*l*m*n - l*m*m*n - m*l*t + n*l*t) * t
+    leadingConst = 1 + ((subU + subV + subW + subT) / (t*t*t - l*l*m*m*n*n))
+    return f"{leadingConst}"
+
+comp_1 = algComplexity()
+comp_2 = algComplexityThm6()
+comp_3 = algComplexityCorollary7()
+print(comp_1, comp_2, comp_3)
+
+file.write(f"{l}_{m}_{n}: {countLinOp(original_u) + countLinOp(original_v) + countLinOp(original_w)}, {original_const}; {uConst + vConst + wConst}, {comp_1}, {comp_2}, {comp_3}\n")
+file.close()
